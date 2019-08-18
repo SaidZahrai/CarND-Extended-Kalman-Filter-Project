@@ -7,19 +7,16 @@ The solution has to handle two types of sensors:
 1. Lidar is a sensor that gives information about the position of the object related to the position of the sensor. The output is a two-dimensional position vector in a plane. The velocity of the object is not measured directly. The output in in the Cartesian coordinate system.
 2. Radar measures the radial and angular position of an object related to the sensor position and in addition, using Doppler effect, it can measure the radial velocity of the object. The output is in the Polar coordinate system.
 
-In this project, the Cartesian position and velocity is chosen as state vector, $\bar{x}$, i.e. 
-$$\bar{x}=\left[ \begin{array}{c}p_x\\ p_y\\ v_x\\ v_y\end{array}\right ] $$
-where, $p_x$ and $p_y$ are position coordinates and $v_x$ and $v_y$ corresponding speeds.
+In this project, the Cartesian position and velocity is chosen as state vector, http://latex.codecogs.com/svg.latex?%24%5Cbar%7Bx%7D%24, i.e. 
+
+http://latex.codecogs.com/svg.latex?%24%24%5Cbar%7Bx%7D%3D%5Cleft%5B+%5Cbegin%7Barray%7D%7Bc%7Dp_x%5C%5C+p_y%5C%5C+v_x%5C%5C+v_y%5Cend%7Barray%7D%5Cright+%5D+%24%24
+
+where, the first two components are position coordinates and the secend two corresponding speeds.
 
 With the above choice of stare vectors, the relation between the Lidar measurement and the prediction becomes linear and the standard Kalman filter can be used. The output of the radar sensor is related to the state vectors in a nonlinear fashion through
-$$ \left[ \begin{array}{c}\rho\\ \theta\\ \dot{\rho}\end{array}\right ] = 
- \left[ 
-     \begin{array}{c}\sqrt{p_x^2 + p_y^2}\\ 
-     \arctan(\frac{p_y}{p_x})\\ 
-     \frac{p_xv_x+p_y v_y}{\sqrt{p_x^2 + p_y^2}}
-     \end{array}
-\right ] 
-$$
+
+http://latex.codecogs.com/svg.latex?%24%24+%5Cleft%5B+%5Cbegin%7Barray%7D%7Bc%7D%5Crho%5C%5C+%5Ctheta%5C%5C+%5Cdot%7B%5Crho%7D%5Cend%7Barray%7D%5Cright+%5D+%3D+%0D%0A+%5Cleft%5B+%0D%0A+++++%5Cbegin%7Barray%7D%7Bc%7D%5Csqrt%7Bp_x%5E2+%2B+p_y%5E2%7D%5C%5C+%0D%0A+++++%5Carctan%28%5Cfrac%7Bp_y%7D%7Bp_x%7D%29%5C%5C+%0D%0A+++++%5Cfrac%7Bp_xv_x%2Bp_y+v_y%7D%7B%5Csqrt%7Bp_x%5E2+%2B+p_y%5E2%7D%7D%0D%0A+++++%5Cend%7Barray%7D%0D%0A%5Cright+%5D+%0D%0A%24%24
+
 therefore, the Extended Kalman Filter needs to be used.
 
 All steps in the implementation, except the extension of Kalman filter, have been explained and implemented in the course and quizes. I have basically copied the code from earlier quizes into the code here. The difference between the standard Kalman filter and the extention to the nonlinear problems is that in the extended version, the estimate of the measurement from prediction is calculated through the nonlinear relation and further the $H$ matrix is replaced with the Jacobian of the forementioned relation. Details were explained in the course material and can be found in the code. A summary of the steps can be the following:
@@ -34,9 +31,9 @@ All steps in the implementation, except the extension of Kalman filter, have bee
 
 # Implementation
 After cloning the Git repository and installation of uWebSockets and cmake on Ubuntu, the three files kalman_filter.cpp, FusionEKF.cpp and tools.cpp were completed accoroding to the instructions given in the project description and markings in the code. Few points to be highlighted are:
-1. In the conversion of coordinates between Cartesian and Polar coordinates, a minimum value was set to $\rho$, $x$ and $y$ to avoid problems with division by zero.
-2. Likewize, the values of $\rho^2$ and $\rho^3$ in calculation of Jacobian were limited to avoid large errors due to divisin by a small value.
-3. The second component of the error vector $y$ in radar measurement, i.e. $\theta$, was limited to the interval $[-\pi,\pi]$ for consistency in the calculation of the update state.
+1. In the conversion of coordinates between Cartesian and Polar coordinates, a minimum value was used for radial distance, x and y to avoid problems with division by zero.
+2. Likewize, the values of square and cube of radial distance in calculation of Jacobian were limited to avoid large errors due to divisin by a small value.
+3. The second component of the error vector in radar measurement, i.e. the angle, was limited to the interval http://latex.codecogs.com/svg.latex?%24%5B-%5Cpi%2C%5Cpi%5D%24 for consistency in the calculation of the update state.
 
 # Efficiency of the code
 There are no unnecessary compuaition in the main loop. There only part that could be improved is the creation of temporary variable that could be eliminated by definition of global variables. This step has not been taken in favor of readability and reliability of the code.
