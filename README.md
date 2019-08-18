@@ -1,134 +1,63 @@
-# Extended Kalman Filter Project Starter Code
-Self-Driving Car Engineer Nanodegree Program
+This is a project in Udacity Nanodegree for Self-driving car, forked from [CarND-Behaviorial-Cloning-P3](https://github.com/udacity/CarND-Extended-Kalman-Filter-Project).
 
-In this project you will utilize a kalman filter to estimate the state of a moving object of interest with noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower than the tolerance outlined in the project rubric. 
+# Extended Kalman Filter
+The goal of this project is to build a scheme for fusion of a radar sensor and a lidar snsor for estimation of location and speed of an observable using Kalman's filter. A code template is prepared to simplify the implementation by only adding the necessary code for use of implementation of Kalman filter. The details for installation of necessary libraries and building the application is given in the original repository and are not repeated here.
 
-This project involves the Term 2 Simulator which can be downloaded [here](https://github.com/udacity/self-driving-car-sim/releases).
+The solution has to handle two types of sensors: 
+1. Lidar is a sensor that gives information about the position of the object related to the position of the sensor. The output is a two-dimensional position vector in a plane. The velocity of the object is not measured directly. The output in in the Cartesian coordinate system.
+2. Radar measures the radial and angular position of an object related to the sensor position and in addition, using Doppler effect, it can measure the radial velocity of the object. The output is in the Polar coordinate system.
 
-This repository includes two files that can be used to set up and install [uWebSocketIO](https://github.com/uWebSockets/uWebSockets) for either Linux or Mac systems. For windows you can use either Docker, VMware, or even [Windows 10 Bash on Ubuntu](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) to install uWebSocketIO. Please see the uWebSocketIO Starter Guide page in the classroom within the EKF Project lesson for the required version and installation scripts.
+In this project, the Cartesian position and velocity is chosen as state vector, $\bar{x}$, i.e. 
+$$\bar{x}=\left[ \begin{array}{c}p_x\\ p_y\\ v_x\\ v_y\end{array}\right ] $$
+where, $p_x$ and $p_y$ are position coordinates and $v_x$ and $v_y$ corresponding speeds.
 
-Once the install for uWebSocketIO is complete, the main program can be built and run by doing the following from the project top directory.
+With the above choice of stare vectors, the relation between the Lidar measurement and the prediction becomes linear and the standard Kalman filter can be used. The output of the radar sensor is related to the state vectors in a nonlinear fashion through
+$$ \left[ \begin{array}{c}\rho\\ \theta\\ \dot{\rho}\end{array}\right ] = 
+ \left[ 
+     \begin{array}{c}\sqrt{p_x^2 + p_y^2}\\ 
+     \arctan(\frac{p_y}{p_x})\\ 
+     \frac{p_xv_x+p_y v_y}{\sqrt{p_x^2 + p_y^2}}
+     \end{array}
+\right ] 
+$$
+therefore, the Extended Kalman Filter needs to be used.
 
-1. mkdir build
-2. cd build
-3. cmake ..
-4. make
-5. ./ExtendedKF
+All steps in the implementation, except the extension of Kalman filter, have been explained and implemented in the course and quizes. I have basically copied the code from earlier quizes into the code here. The difference between the standard Kalman filter and the extention to the nonlinear problems is that in the extended version, the estimate of the measurement from prediction is calculated through the nonlinear relation and further the $H$ matrix is replaced with the Jacobian of the forementioned relation. Details were explained in the course material and can be found in the code. A summary of the steps can be the following:
 
-Tips for setting up your environment can be found in the classroom lesson for this project.
+- At first step, only initialize the state vector with the measurement data and record the timestamp.
+- In other steps do the following:
+    - Execute the prediction step and predict the new state vector using the data from previous step.
+    - Update the covariance matrix.
+    - If the measurement is from Lidar, use standard Kalman filter and update the state vector.
+    - If the measurement is from Radar, use the extended Kalman filter and update the state vector.
+- RMSE values are computed and sent together with the new state vector to the simulator for visualization.
 
-Note that the programs that need to be written to accomplish the project are src/FusionEKF.cpp, src/FusionEKF.h, kalman_filter.cpp, kalman_filter.h, tools.cpp, and tools.h
+# Implementation
+After cloning the Git repository and installation of uWebSockets and cmake on Ubuntu, the three files kalman_filter.cpp, FusionEKF.cpp and tools.cpp were completed accoroding to the instructions given in the project description and markings in the code. Few points to be highlighted are:
+1. In the conversion of coordinates between Cartesian and Polar coordinates, a minimum value was set to $\rho$, $x$ and $y$ to avoid problems with division by zero.
+2. Likewize, the values of $\rho^2$ and $\rho^3$ in calculation of Jacobian were limited to avoid large errors due to divisin by a small value.
+3. The second component of the error vector $y$ in radar measurement, i.e. $\theta$, was limited to the interval $[-\pi,\pi]$ for consistency in the calculation of the update state.
 
-The program main.cpp has already been filled out, but feel free to modify it.
+# Efficiency of the code
+There are no unnecessary compuaition in the main loop. There only part that could be improved is the creation of temporary variable that could be eliminated by definition of global variables. This step has not been taken in favor of readability and reliability of the code.
 
-Here is the main protocol that main.cpp uses for uWebSocketIO in communicating with the simulator.
+# Compiling and execution
 
+To run the program, you need to go to the build direectory and first compile the code by executing the command
 
-**INPUT**: values provided by the simulator to the c++ program
+```
+$ make
+```
+This command compiles the coded and links them. The output is an executable called 'ExtendedKF' that can be executed by 
 
-["sensor_measurement"] => the measurement that the simulator observed (either lidar or radar)
+```
+$ ./ExtendedKF
+```
+This starts the webserver that waits for port 4567 for connection. Once the simulator is started, the connection will be established and the test will run.
 
-
-**OUTPUT**: values provided by the c++ program to the simulator
-
-["estimate_x"] <= kalman filter estimated position x
-
-["estimate_y"] <= kalman filter estimated position y
-
-["rmse_x"]
-
-["rmse_y"]
-
-["rmse_vx"]
-
-["rmse_vy"]
-
----
-
-## Other Important Dependencies
-
-* cmake >= 3.5
-  * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1 (Linux, Mac), 3.81 (Windows)
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools](https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
-
-## Basic Build Instructions
-
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make` 
-   * On windows, you may need to run: `cmake .. -G "Unix Makefiles" && make`
-4. Run it: `./ExtendedKF `
-
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
-## Code Style
-
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
-
-## Generating Additional Data
-
-This is optional!
-
-If you'd like to generate your own radar and lidar data, see the
-[utilities repo](https://github.com/udacity/CarND-Mercedes-SF-Utilities) for
-Matlab scripts that can generate additional data.
-
-## Project Instructions and Rubric
-
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
-
-More information is only accessible by people who are already enrolled in Term 2 (three-term version) or Term 1 (two-term version)
-of CarND. If you are enrolled, see the Project Resources page in the classroom
-for instructions and the project rubric.
-
-## Hints and Tips!
-
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
-* Students have reported rapid expansion of log files when using the term 2 simulator.  This appears to be associated with not being connected to uWebSockets.  If this does occur,  please make sure you are conneted to uWebSockets. The following workaround may also be effective at preventing large log files.
-
-    + create an empty log file
-    + remove write permissions so that the simulator can't write to log
- * Please note that the ```Eigen``` library does not initialize ```VectorXd``` or ```MatrixXd``` objects with zeros upon creation.
-
-## Call for IDE Profiles Pull Requests
-
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to ensure
-that students don't feel pressured to use one IDE or another.
-
-However! We'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Regardless of the IDE used, every submitted project must
-still be compilable with cmake and make.
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+# Results
+The test should run after the above steps and expected results are obtailed as shown below.
+<p align="center">
+<img src="./images/EKF.PNG" width="600"/>
+</p>
 
